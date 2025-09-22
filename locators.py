@@ -8,6 +8,7 @@ class LoginPageLocators:
     # Поля ввода
     EMAIL_INPUT = (By.XPATH, "//input[@type='text']")  # Поле email
     PASSWORD_INPUT = (By.XPATH, "//input[@type='password']")  # Поле пароля
+    ALL_INPUTS = (By.TAG_NAME, "input")  # Все поля ввода
     
     # Кнопки
     LOGIN_BUTTON = (By.XPATH, "//button[text()='Войти']")  # Кнопка "Войти"
@@ -26,6 +27,7 @@ class MainPageLocators:
     BUNS_TAB = (By.XPATH, "//span[text()='Булки']/..")  # Вкладка "Булки"
     SAUCES_TAB = (By.XPATH, "//span[text()='Соусы']/..")  # Вкладка "Соусы"
     FILLINGS_TAB = (By.XPATH, "//span[text()='Начинки']/..")  # Вкладка "Начинки"
+    CURRENT_TAB = (By.XPATH, "//div[contains(@class, 'tab_tab_type_current')]")  # Активная вкладка
     
     # Ингредиенты
     INGREDIENT = (By.XPATH, "//div[contains(@class, 'BurgerIngredient_ingredient__')]")  # Любой ингредиент
@@ -42,6 +44,7 @@ class RegistrationPageLocators:
     PASSWORD_INPUT = (By.XPATH, "(//input)[3]")  # Поле пароля
     REGISTER_BUTTON = (By.XPATH, "//button[text()='Зарегистрироваться']")  # Кнопка регистрации
     LOGIN_LINK = (By.XPATH, "//a[text()='Войти']")  # Ссылка на вход
+    ALL_INPUTS = (By.TAG_NAME, "input")  # Все поля ввода
 
 class ForgotPasswordPageLocators:
     """Локаторы для страницы восстановления пароля"""
@@ -57,4 +60,5 @@ class CommonLocators:
     """Общие локаторы для всех страниц"""
     
     MODAL = (By.XPATH, "//div[contains(@class, 'Modal_modal__')]")  # Модальное окно
+    MODAL_WINDOW = (By.XPATH, "//div[contains(@class, 'Modal_modal__')]")  # Модальное окно
     ORDER_SUCCESS_TEXT = (By.XPATH, "//*[contains(text(), 'орбитальной станции')]")  # Текст успешного заказа

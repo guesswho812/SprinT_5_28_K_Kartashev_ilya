@@ -2,139 +2,158 @@ import sys
 import os
 sys.path.append(os.path.dirname(os.path.dirname(os.path.abspath(__file__))))
 
-from data import TEST_EMAIL, TEST_PASSWORD, BASE_URL
-from locators import MainPageLocators, LoginPageLocators
-from selenium import webdriver
-from selenium.webdriver.common.by import By
+from data import TEST_EMAIL, TEST_PASSWORD, BASE_URL, LOGIN_URL, MAIN_URL
+from locators import MainPageLocators, LoginPageLocators, CommonLocators
 from selenium.webdriver.support.ui import WebDriverWait
 from selenium.webdriver.support import expected_conditions as EC
 from selenium.webdriver.common.action_chains import ActionChains
 import pytest
 
 class TestBurgerConstructor:
-    def test_burger_construction_and_order(self, driver):
-        """Тест проверяет полный цикл: сборка бургера через перетаскивание и оформление заказа.
+    def test_burger_construction_and_order(self, login_page):
+        """Тест проверяет полный цикл: сборка бургера через перетаскивание и оформление заказа."""
+        # Страница логина уже открыта через фикстуру login_page
         
-        Шаги:
-        1. Авторизоваться в системе
-        2. Перетащить ингредиент в конструктор
-        3. Нажать кнопку 'Оформить заказ'
-        4. Проверить появление модального окна с подтверждением заказа
-        
-        Ожидаемый результат:
-        - Появление модального окна с текстом о начале приготовления заказа
-        """
-        # Логинимся
-        driver.get(f"{BASE_URL}/login")
-        
-        # Ожидаем появление полей ввода
-        WebDriverWait(driver, 10).until(
-            EC.visibility_of_all_elements_located((By.TAG_NAME, "input"))
+        # Увеличиваем время ожидания и добавляем проверку URL
+        WebDriverWait(login_page, 15).until(
+            EC.url_contains(LOGIN_URL)
         )
         
-        all_inputs = driver.find_elements(By.TAG_NAME, "input")
+        # Ожидаем появление полей ввода (увеличиваем время)
+        WebDriverWait(login_page, 15).until(
+            EC.visibility_of_all_elements_located(LoginPageLocators.ALL_INPUTS)
+        )
+        
+        all_inputs = login_page.find_elements(*LoginPageLocators.ALL_INPUTS)
         all_inputs[0].send_keys(TEST_EMAIL)
         all_inputs[1].send_keys(TEST_PASSWORD)
         
         # Кликаем кнопку входа
-        login_button = WebDriverWait(driver, 10).until(
+        login_button = WebDriverWait(login_page, 15).until(
             EC.element_to_be_clickable(LoginPageLocators.LOGIN_BUTTON)
         )
         login_button.click()
         
         # Ожидаем завершение авторизации
-        WebDriverWait(driver, 10).until(
-            EC.url_to_be(BASE_URL + "/")
+        WebDriverWait(login_page, 15).until(
+            EC.url_to_be(BASE_URL + MAIN_URL)
         )
         
         # Перетаскиваем ингредиент
-        ingredient = WebDriverWait(driver, 10).until(
+        ingredient = WebDriverWait(login_page, 15).until(
             EC.visibility_of_element_located(MainPageLocators.INGREDIENT)
         )
         
-        constructor_area = WebDriverWait(driver, 10).until(
+        constructor_area = WebDriverWait(login_page, 15).until(
             EC.visibility_of_element_located(MainPageLocators.CONSTRUCTOR_AREA)
         )
         
-        actions = ActionChains(driver)
+        actions = ActionChains(login_page)
         actions.drag_and_drop(ingredient, constructor_area).perform()
         
         # Нажимаем "Оформить заказ"
-        order_button = WebDriverWait(driver, 10).until(
+        order_button = WebDriverWait(login_page, 15).until(
             EC.element_to_be_clickable(MainPageLocators.ORDER_BUTTON)
         )
         order_button.click()
         
         # Проверяем успешное оформление заказа
-        WebDriverWait(driver, 10).until(
+        WebDriverWait(login_page, 15).until(
             EC.any_of(
-                EC.visibility_of_element_located((By.XPATH, "//div[contains(@class, 'Modal_modal__')]")),
-                EC.visibility_of_element_located((By.XPATH, "//*[contains(text(), 'орбитальной станции')]"))
+                EC.visibility_of_element_located(CommonLocators.MODAL_WINDOW),
+                EC.visibility_of_element_located(CommonLocators.ORDER_SUCCESS_TEXT)
             )
         )
         
         # Проверяем что модальное окно отображается
-        modal = WebDriverWait(driver, 10).until(
-            EC.visibility_of_element_located((By.XPATH, "//div[contains(@class, 'Modal_modal__')]"))
+        modal = WebDriverWait(login_page, 15).until(
+            EC.visibility_of_element_located(CommonLocators.MODAL_WINDOW)
         )
         assert modal.is_displayed(), "Модальное окно заказа не отобразилось"
 
-    def test_constructor_sections(self, driver):
-        """Тест проверяет переключение между разделами конструктора: 'Булки', 'Соусы', 'Начинки'.
-        
-        Шаги:
-        1. Открыть главную страницу
-        2. Найти вкладки разделов
-        3. Последовательно кликнуть на каждую вкладку
-        4. Проверить активацию соответствующей вкладки
-        
-        Ожидаемый результат:
-        - При клике на вкладку она становится активной
-        - Отображается соответствующий раздел с ингредиентами
-        """
-        driver.get(BASE_URL)
+    def test_switch_to_sauces_tab(self, main_page):
+        """Тест проверяет переключение на вкладку 'Соусы'."""
+        # Главная страница уже открыта через фикстуру main_page
         
         # Ожидаем загрузки вкладок
-        WebDriverWait(driver, 10).until(
+        WebDriverWait(main_page, 15).until(
             EC.visibility_of_element_located(MainPageLocators.BUNS_TAB)
         )
         
-        # Находим все вкладки
-        buns_tab = driver.find_element(*MainPageLocators.BUNS_TAB)
-        sauces_tab = driver.find_element(*MainPageLocators.SAUCES_TAB)
-        fillings_tab = driver.find_element(*MainPageLocators.FILLINGS_TAB)
+        # Находим вкладки
+        sauces_tab = main_page.find_element(*MainPageLocators.SAUCES_TAB)
         
-        # Кликаем на "Соусы"
-        sauces_tab.click()
+        # Скроллим к элементу и ждем кликабельности
+        main_page.execute_script("arguments[0].scrollIntoView();", sauces_tab)
+        
+        WebDriverWait(main_page, 10).until(
+            EC.element_to_be_clickable(MainPageLocators.SAUCES_TAB)
+        )
+        
+        # Кликаем на "Соусы" через JavaScript
+        main_page.execute_script("arguments[0].click();", sauces_tab)
         
         # Проверяем активную вкладку "Соусы"
-        WebDriverWait(driver, 10).until(
-            EC.text_to_be_present_in_element((By.XPATH, "//div[contains(@class, 'tab_tab_type_current')]"), "Соусы")
+        WebDriverWait(main_page, 10).until(
+            EC.text_to_be_present_in_element(MainPageLocators.CURRENT_TAB, "Соусы")
         )
-        active_tab = driver.find_element(By.XPATH, "//div[contains(@class, 'tab_tab_type_current')]")
+        active_tab = main_page.find_element(*MainPageLocators.CURRENT_TAB)
         assert "Соусы" in active_tab.text, "Вкладка 'Соусы' не активировалась"
+
+    def test_switch_to_fillings_tab(self, main_page):
+        """Тест проверяет переключение на вкладку 'Начинки'."""
+        # Главная страница уже открыта через фикстуру main_page
         
-        # Кликаем на "Начинки"
-        fillings_tab.click()
+        # Ожидаем загрузки вкладок
+        WebDriverWait(main_page, 15).until(
+            EC.visibility_of_element_located(MainPageLocators.BUNS_TAB)
+        )
+        
+        # Находим вкладки
+        fillings_tab = main_page.find_element(*MainPageLocators.FILLINGS_TAB)
+        
+        # Скроллим к элементу и ждем кликабельности
+        main_page.execute_script("arguments[0].scrollIntoView();", fillings_tab)
+        
+        WebDriverWait(main_page, 10).until(
+            EC.element_to_be_clickable(MainPageLocators.FILLINGS_TAB)
+        )
+        
+        # Кликаем на "Начинки" через JavaScript
+        main_page.execute_script("arguments[0].click();", fillings_tab)
         
         # Проверяем активную вкладку "Начинки"
-        WebDriverWait(driver, 10).until(
-            EC.text_to_be_present_in_element((By.XPATH, "//div[contains(@class, 'tab_tab_type_current')]"), "Начинки")
+        WebDriverWait(main_page, 10).until(
+            EC.text_to_be_present_in_element(MainPageLocators.CURRENT_TAB, "Начинки")
         )
-        active_tab = driver.find_element(By.XPATH, "//div[contains(@class, 'tab_tab_type_current')]")
+        active_tab = main_page.find_element(*MainPageLocators.CURRENT_TAB)
         assert "Начинки" in active_tab.text, "Вкладка 'Начинки' не активировалась"
+
+    def test_switch_to_buns_tab(self, main_page):
+        """Тест проверяет переключение на вкладку 'Булки'."""
+        # Главная страница уже открыта через фикстуру main_page
         
-        # Кликаем на "Булки"
-        buns_tab.click()
+        # Ожидаем загрузки вкладок
+        WebDriverWait(main_page, 15).until(
+            EC.visibility_of_element_located(MainPageLocators.BUNS_TAB)
+        )
+        
+        # Находим вкладки
+        buns_tab = main_page.find_element(*MainPageLocators.BUNS_TAB)
+        
+        # Скроллим к элементу и ждем кликабельности
+        main_page.execute_script("arguments[0].scrollIntoView();", buns_tab)
+        
+        WebDriverWait(main_page, 10).until(
+            EC.element_to_be_clickable(MainPageLocators.BUNS_TAB)
+        )
+        
+        # Кликаем на "Булки" через JavaScript
+        main_page.execute_script("arguments[0].click();", buns_tab)
         
         # Проверяем активную вкладку "Булки"
-        WebDriverWait(driver, 10).until(
-            EC.text_to_be_present_in_element((By.XPATH, "//div[contains(@class, 'tab_tab_type_current')]"), "Булки")
+        WebDriverWait(main_page, 10).until(
+            EC.text_to_be_present_in_element(MainPageLocators.CURRENT_TAB, "Булки")
         )
-        active_tab = driver.find_element(By.XPATH, "//div[contains(@class, 'tab_tab_type_current')]")
+        active_tab = main_page.find_element(*MainPageLocators.CURRENT_TAB)
         assert "Булки" in active_tab.text, "Вкладка 'Булки' не активировалась"
-
-# Команды для запуска тестов:
-# python -m pytest tests/test_burger_constructor.py::TestBurgerConstructor::test_burger_construction_and_order -v
-# python -m pytest tests/test_burger_constructor.py::TestBurgerConstructor::test_constructor_sections -v
-# python -m pytest tests/test_burger_constructor.py -v  # запуск всех тестов класса
